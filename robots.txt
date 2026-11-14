@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://zaowuyinli.com/sitemap.xml

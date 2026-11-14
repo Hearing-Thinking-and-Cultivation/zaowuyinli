@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F0E9DA">
+<title>造物引力 · 硬件与芯片日报</title>
+<meta name="description" content="硬件、芯片、拆解的每日观察。用数据判断一件硬件值不值。">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="canonical" href="https://zaowuyinli.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="造物引力">
+<meta property="og:title" content="造物引力 · 硬件与芯片日报">
+<meta property="og:description" content="硬件、芯片、拆解的每日观察。">
+<meta property="og:url" content="https://zaowuyinli.com/">
+<meta property="og:image" content="https://zaowuyinli.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<section class="hero" id="top">
+  <svg id="field" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"></svg>
+
+  <div class="row">
+    <div class="brand">造物引力</div>
+    <div class="mono" id="today">2026.11.14</div>
+  </div>
+
+  <div class="mid">
+    <h1 class="mast" id="mast">造物引力<span class="dot"></span></h1>
+    <div class="tag mono">硬件 · 芯片 · 拆解 · 日报</div>
+  </div>
+
+  <div class="foot">
+    <div class="mono">CREATION GRAVITY</div>
+    <div class="mono">每日 12:00 更新</div>
+  </div>
+</section>
+
+<script>
+(function () {
+  // 日期自动跟当天走，不用每天改文件
+  const el = document.getElementById('today');
+  if (el) {
+    const d = new Date();
+    el.textContent = d.getFullYear() + '.' +
+      String(d.getMonth() + 1).padStart(2, '0') + '.' +
+      String(d.getDate()).padStart(2, '0');
+  }
+})();
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.getElementById('field');
+  const mast = document.getElementById('mast');
+  if (!svg || !mast) return;
+
+  const STEP = 32, AMOUNT = 0.56, EASE = 0.16;
+  let W = 0, H = 0, N = 60, paths = [];
+  let cur = { x: 0, y: 0 }, tgt = { x: 0, y: 0 }, rest = { x: 0, y: 0 };
+  let radius = 260, running = false, pinned = null;
+
+  function layout() {
+    W = svg.clientWidth; H = svg.clientHeight;
+    N = Math.max(36, Math.min(90, Math.ceil(H / 12)));
+    radius = Math.min(Math.max(Math.min(W, H) * 0.3, 150), 320);
+
+    const r = mast.getBoundingClientRect();
+    const b = svg.getBoundingClientRect();
+    rest = { x: r.left - b.left + r.width / 2, y: r.top - b.top + r.height / 2 };
+    if (pinned) { cur = { ...pinned }; tgt = { ...pinned }; }
+    else if (!running) { cur = { ...rest }; tgt = { ...rest }; }
+
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.textContent = '';
+    paths = [];
+    for (let x = 0; x <= W + STEP; x += STEP) paths.push({ el: mk(), axis: 'v', pos: x });
+    for (let y = 0; y <= H + STEP; y += STEP) paths.push({ el: mk(), axis: 'h', pos: y });
+    draw();
+  }
+
+  function mk() { const p = document.createElementNS(NS, 'path'); svg.appendChild(p); return p; }
+
+  function draw() {
+    const cx = cur.x, cy = cur.y, ix = 1 / (radius * 0.95), iy = 1 / (radius * 1.05);
+    for (let k = 0; k < paths.length; k++) {
+      const { el, axis, pos } = paths[k];
+      const len = axis === 'v' ? H : W;
+      let d = '';
+      for (let i = 0; i <= N; i++) {
+        const t = (len * i) / N;
+        const x = axis === 'v' ? pos : t;
+        const y = axis === 'v' ? t : pos;
+        const ex = (x - cx) * ix, ey = (y - cy) * iy;
+        const w = AMOUNT * Math.exp(-(ex * ex + ey * ey));
+        d += (i ? 'L' : 'M') + (x - (x - cx) * w).toFixed(1) + ' ' + (y - (y - cy) * w).toFixed(1);
+      }
+      el.setAttribute('d', d);
+    }
+  }
+
+  function tick() {
+    const dx = tgt.x - cur.x, dy = tgt.y - cur.y;
+    if (Math.abs(dx) < 0.25 && Math.abs(dy) < 0.25) { cur = { ...tgt }; draw(); running = false; return; }
+    cur.x += dx * EASE; cur.y += dy * EASE; draw(); requestAnimationFrame(tick);
+  }
+  function kick() { if (!running) { running = true; requestAnimationFrame(tick); } }
+  function move(x, y) {
+    if (pinned) return;
+    const b = svg.getBoundingClientRect();
+    tgt = { x: x - b.left, y: y - b.top };
+    kick();
+  }
+
+  window.addEventListener('pointermove', e => move(e.clientX, e.clientY), { passive: true });
+  window.addEventListener('pointerleave', () => { if (pinned) return; tgt = { ...rest }; kick(); });
+  window.addEventListener('touchmove', e => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY); }, { passive: true });
+  window.addEventListener('touchend', () => { if (pinned) return; tgt = { ...rest }; kick(); });
+
+  let raf;
+  window.addEventListener('resize', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(layout); });
+  layout();
+
+  const q = new URLSearchParams(location.search);
+  if (q.has('dent')) {
+    const [dx, dy] = q.get('dent').split(',').map(Number);
+    if (isFinite(dx) && isFinite(dy)) { pinned = { x: dx, y: dy }; layout(); }
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+})();
+</script>
+</body>
+</html>
