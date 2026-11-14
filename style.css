@@ -40,7 +40,7 @@ h1.mast .dot{
   display:inline-block;width:.16em;height:.16em;border-radius:50%;
   background:var(--hot);margin-left:.26em;vertical-align:baseline;
 }
-.hero .tag{font-size:clamp(11px,.95vw,14px);letter-spacing:.3em;color:var(--mute)}
+.hero .tag{font-size:clamp(12px,1.05vw,17px);letter-spacing:.45em;text-indent:.45em;color:var(--mute)}
 .hero .foot{
   position:relative;z-index:2;display:flex;justify-content:space-between;align-items:baseline;
   gap:16px;border-top:1px solid var(--line);padding-top:clamp(8px,1.1vw,16px);
